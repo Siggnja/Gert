@@ -1,12 +1,18 @@
 import os
 import re
 
-videoTypes = ['.avi', '.mkv', '.wmv', '.mp4']
+videoTypes = ['.avi', '.mkv', '.wmv', '.mp4','.flv']
+music = ['.mp3']
 
 SHOWS = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Shows\\"
 MOVIES = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Movies\\"
 TEST = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\Tester"
-
+######
+SHOWSS = "C:\\Users\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\\Shows\\"
+MOVIESS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Movies\\"
+MUSIC = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Music\\"
+TESTS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\downloads"
+BASE  = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV"
 def movefile(s):
 
 
@@ -50,19 +56,20 @@ def movefile(s):
         name = getMovieName(filename)
         try:
             if name == "Unsorted Movies":
-                path = MOVIES + "\\" + filename
+                path = MOVIESS + "\\" + filename
             else:
                 path = makeMoviedir(name) + "\\" + filename
 
             mover(s, path)
         except TypeError:
             print("MOVIE ERROR MOVIE ERROR")
-
+    elif result == 3:
+        mover(s,MUSIC+filename)
     else:
         print("SIDDL EDDEH HVENN EDDEH EG A EKKI AD PRENTAST VENNUR")
     
 def makeMoviedir(movie):
-    path = MOVIES + movie
+    path = MOVIESS + movie
     if not os.path.exists(path):
         os.makedirs(path)
     return path
@@ -71,14 +78,14 @@ def makeMoviedir(movie):
     
     
 def makeShowdir(show):
-    path = SHOWS + show
+    path = SHOWSS + show
     if not os.path.exists(path):
         os.makedirs(path)
     return path
         
 def makeseason(show, season):
     try:
-        path = SHOWS + show + "\\" + "Season " + str(season)
+        path = SHOWSS + show + "\\" + "Season " + str(season)
         if not os.path.exists(path):
             os.makedirs(path)
         return path
@@ -109,7 +116,7 @@ def findpaths(folder):
             else:
                 fullpath = os.path.join(root, f)
                 movefile(fullpath)
-
+   # tup = adoptionCandidates(
     del_dirs(folder)
 
 
@@ -168,16 +175,21 @@ def getSeason(filename):
 def checkMovieOrShow(filename):
     for i in videoTypes:
         if filename.endswith(i):
+            if 'sample' in filename.lower():
+                return 0
             if getSeason(filename)!=None:
                 return 1
             else:
                 return 2
+    for i in music:
+        if filename.endswith(i):
+            return 3
     return 0
 
 # 0 = other files to remove
 # 1 = show
 # 2 = movie
-
+# 3 = music
 
 def adoptionCandidates(basedir, file):
     dirs = filter(lambda x : os.path.isdir(os.path.join(basedir, x)), os.listdir(basedir))
