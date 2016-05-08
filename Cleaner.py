@@ -1,39 +1,43 @@
 import os
 import re
+import PTN
+import logging
+#####Setting Logger#####
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename ='logger.log', mode='w',encoding='utf-8')
+logger.addHandler(handler)
 
-videoTypes = ['.avi', '.mkv', '.wmv', '.mp4','.flv']
-music = ['.mp3']
+videoTypes = ['.avi', '.mkv', '.wmv', '.mp4','.flv'] #List of videotypes
+music = ['.mp3'] #List of music types
 
-SHOWS = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Shows\\"
-MOVIES = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Movies\\"
-TEST = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\Tester"
+
+#SHOWS = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Shows\\"
+#MOVIES = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\TV\\Movies\\"
+#TEST = "C:\\Users\\Sverrir\\OneDrive\\HR\\1 ár - Vorönn\\Python\\Verkefni\\Verkefni 4\\Tester"
 ######
-SHOWSS = "C:\\Users\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\\Shows\\"
-MOVIESS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Movies\\"
-MUSIC = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Music\\"
-TESTS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\downloads"
+#SHOWSS = "C:\\Users\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\\Shows\\"
+#MOVIESS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Movies\\"
+#MUSIC = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV\Music\\"
+#TESTS = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\downloads"
 BASE  = "C:\\Users\\Sigurdur\\Documents\\HR - 1 ár\\Python\\Verkefni 4\\TV"
-def movefile(s):
 
+def movefile(s):
 
     filename = os.path.basename(s)
 
-    #Fall sem tekur file'inn og tjékkar hvort hann sé þáttur
-
-
-    result = checkMovieOrShow(filename)
-    if result == 0:
+    result = checkFileRace(filename)
+    if result == 0: #Deletable file
         try:
             os.remove(s)
         except FileNotFoundError:
-            print(s)
-            print("Could not delete file!")
+            logging.warning('I was not able to find %s' %(s))
         except PermissionError:
             print(s)
-            print("I was not allowed to delete this file!")
+            print("I was not allowed to delete %s"%(s))
         
-    elif result == 1:
-        name = getShowName(filename)
+    elif result == 1: #show
+        name = getName(filename)
 
         path = makeShowdir(name)
 
@@ -44,62 +48,52 @@ def movefile(s):
                 season = getSeason(filename)
                 path = makeseason(name, season) + "\\" + filename
                 
-            
             mover(s, path)
         except TypeError:
-            print("Name was invalid")
+            logger.warning("%s is an incorrect name" %s)
 
-
-        
     
-    elif result == 2:
-        name = getMovieName(filename)
-        try:
-            if name == "Unsorted Movies":
-                path = MOVIESS + "\\" + filename
-            else:
-                path = makeMoviedir(name) + "\\" + filename
-
-            mover(s, path)
-        except TypeError:
-            print("MOVIE ERROR MOVIE ERROR")
-    elif result == 3:
+    elif result == 2: #Movie
+        name = getName(filename)
+        if name == "Unsorted Movies":
+            path = MOVIESS + "\\" + filename
+        else:
+            path = makeMoviedir(name) + "\\" + filename
+        mover(s, path)
+    elif result == 3: #Music file - mp3
         mover(s,MUSIC+filename)
-    else:
-        print("SIDDL EDDEH HVENN EDDEH EG A EKKI AD PRENTAST VENNUR")
     
-def makeMoviedir(movie):
+def makeMoviedir(movie): #Creates a directory for the given movie
     path = MOVIESS + movie
     if not os.path.exists(path):
         os.makedirs(path)
     return path
     
     
-    
-    
-def makeShowdir(show):
+def makeShowdir(show): #Creates a directory for the given show
     path = SHOWSS + show
     if not os.path.exists(path):
         os.makedirs(path)
     return path
         
-def makeseason(show, season):
+def makeseason(show, season): #Creates a directory for the given season of a show
     try:
         path = SHOWSS + show + "\\" + "Season " + str(season)
         if not os.path.exists(path):
             os.makedirs(path)
         return path
     except FileNotFoundError:
-        print(os.path.basename(path), " could not be moved!")
+        logger.warning( "%s could not be moved!"%(os.path.basename(path)))
     
 
-def mover(old, new):
+def mover(old, new): #Deletes the old file and moves it to the new location
     try:
         os.rename(old, new)
     except FileExistsError:
-        print(os.path.basename(old), "File exists in: ", os.path.dirname(new))
+            os.remove(old)
+            logging.warning("%s File exists in: %s, deleting file" %(os.path.basename(old),os.path.dirname(new)))
     except FileNotFoundError:
-        print(os.path.basename(old), "Not found in: ", os.path.dirname(old))
+            logger.warning( "%s Not found in: %s"%s (os.path.basename(old),os.path.dirname(old)))
     
 
 def findpaths(folder):
@@ -115,64 +109,28 @@ def findpaths(folder):
                 pass
             else:
                 fullpath = os.path.join(root, f)
-                movefile(fullpath)
-   # tup = adoptionCandidates(
     del_dirs(folder)
 
 
 
-def getShowName(name):
+def getName(name): #Returns the title of a Show or Movie
 
-    #t = re.compile('^((?P<ShowNameA>.*[^ (_.])[ (_.]+( (?P<ShowYearA>\d{4})([(_.]+S(?P<SeasonA>\d{1,2})E(?P<EpisodeA>\d{1,2}))?|(?<!\d{4}[(_.])S(?P<SeasonB>\d{1,2})E(?P<EpisodeB>\d{1,2})|(?P<EpisodeC>\d{3}))|(?P<ShowNameB>.+))')
-
-    #t = re.compile('^( (?P<ShowNameA>.*[^ (.]) [ (.]+ ( (?P<ShowYearA>\d{4}) ([ (.]+S(?P<SeasonA>\d{1,2})E(?P<EpisodeA>\d{1,2}))? | (?<!\d{4}[ (.]) S(?P<SeasonB>\d{1,2})E(?P<EpisodeB>\d{1,2}) | (?P<EpisodeC>\d{3}[^720p|480p]) ) | (?P<ShowNameB>.+) )')
-
-    regtv = re.compile('(.+?)[ .]S(\d\d?)E(\d\d?).*?(?:[ .](\d{3}\d?p)|\Z)?')
-    
-    tv = regtv.match(name)
-
-    if tv is None:
-        x = re.search(".*[sS][0-9]+", name)
-        if re.search(".*[sS][0-9]+", name):
-            x = x.group()
-            x = x[0:-4].strip()
-            x = x.replace('.', ' ')
-        else:
-            x = "Unsorted TV Shows"
-        return x.title()
-    else:
-        return tv.group(1).replace(".", " ")
-
-
-def getMovieName(name):
-    regmovie = re.compile('(.*?[ .]\d{4}).*?(?:[ .](\d{3}\d?p)|\Z)?')
-
-    tv = regmovie.match(name)
-
-    if tv is None:
-        return "Unsorted Movies"
-    else:
-        return tv.group(1).replace(".", " ")
-    
+   try:
+        return PTN.parse(name)['title']
+       
+   except KeyError:
+        return "Unsorted"
 
 
 
-def getSeason(filename):
-    patterns =      [
-                '.*S(\d+)E(\d+).*',
-                '(\d+)x(\d+).*'
-            ]
-    
-    for pattern in patterns:
-        p = re.compile(pattern, re.I)
-        g = p.findall(filename)
-        if len(g) > 0:
-            season = int(g[0][0])
-            return season
 
-    return None
+def getSeason(filename): #Return the season of a Show
+    try:
+        return PTN.parse(filename)['season']
+    except KeyError:
+        return None
 
-def checkMovieOrShow(filename):
+def checkFileRace(filename): 
     for i in videoTypes:
         if filename.endswith(i):
             if 'sample' in filename.lower():
@@ -185,48 +143,11 @@ def checkMovieOrShow(filename):
         if filename.endswith(i):
             return 3
     return 0
-
-# 0 = other files to remove
-# 1 = show
-# 2 = movie
-# 3 = music
-
-def adoptionCandidates(basedir, file):
-    dirs = filter(lambda x : os.path.isdir(os.path.join(basedir, x)), os.listdir(basedir))
-    if os.path.isdir(file):
-        #print '%s is a directory. Aborting' % file
-        return []
-
-    (filepath, filename) = os.path.split(file)
-
-    ignoredPhrases = ['-','_']
-
-    candidates = []
-    for dir in dirs:
-        dirParts = dir.split()
-        score = 0
-        requiredScore = 0
-
-        for part in dirParts:
-            if ignoredPhrases.count(part) > 0:
-                continue
-
-            requiredScore = requiredScore + 1
-
-            if filename.find(part) >= 0:
-                score = score + 1
-
-        if score == requiredScore:
-            candidates.append( (os.path.join(basedir, dir), score) )
-
-        #print '%s scored %i (req: %i)' % (dir, score, requiredScore)
-
-    #for (dir, score) in candidates:
-    #       print '%s with score %i' % (dir, score)
-
-    return candidates
-
-
+#This function checks what kind of file the given filename is, return the following values
+# 0 = Files to remove
+# 1 = Tv Shows
+# 2 = Movies
+# 3 = Music
 
 
 def del_dirs(src_dir):
@@ -238,13 +159,20 @@ def del_dirs(src_dir):
         except OSError as ex:
             pass
 
-
-def get_files(src_dir):
-# traverse root directory, and list directories as dirs and files as files
-    for root, dirs, files in os.walk(src_dir):
-        path = root.split('/')
-        for file in files:
-            process(os.path.join(root, file))
-            os.remove(os.path.join(root, file))
-
-                    
+print("Please input the full path of your download folder: ")
+temp = input()
+SHOWSS = temp + "\\Shows"
+MOVIESS = temp + "\\Movies"
+MUSIC = temp + "\\Music"
+#Creating the directories Shows,Movies,Music in the downloads folder
+if not os.path.exists(SHOWSS):
+    os.makedirs(SHOWSS)
+if not os.path.exists(MOVIESS):
+    os.makedirs(MOVIESS)
+if not os.path.exists(MUSIC):
+    os.makedirs(MUSIC)
+    
+SHOWSS += "\\"
+MOVIESS += "\\"
+MUSIC += "\\"
+findpaths(temp)
